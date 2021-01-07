@@ -200,12 +200,13 @@ class Container implements ContainerInterface
             $isKeywords = false;
             foreach (array_keys($this->keywords) as $keyword) {
                 if (substr($attr->getName(), 0 - strlen($keyword)) === $keyword) {
-                    $attrs['keywords'][$keyword] = $attr->getArguments();
                     $isKeywords = true;
                     if ($keyword === 'Router') {
-                        $this->dispatch->dispatch(new Event\Router(...$attrs['keywords'][$keyword]));
+                        $this->dispatch->dispatch($attr->newInstance());
+                        break;
                     }
 
+                    $attrs['keywords'][$keyword] = $attr;
                     break;
                 }
             }
@@ -350,11 +351,7 @@ class Container implements ContainerInterface
 
         $hasTransation = false;
         $hasDatabase = false;
-        foreach ($this->methods[$classMethod]['keywords'] as $keyword => $params) {
-            if ($keyword === 'Router') {
-                continue;
-            }
-
+        foreach ($this->methods[$classMethod]['keywords'] as $keyword => $event) {
             if ($keyword === 'Transaction') {
                 $hasTransation = true;
                 continue;
@@ -368,7 +365,7 @@ class Container implements ContainerInterface
                 $hasDatabase = true;
             }
 
-            $pool = $this->dispatch->dispatchWithReturn($this->getEvent($keyword, ...$params));
+            $pool = $this->dispatch->dispatchWithReturn($event->newInstance());
 
             if ($keyword === 'Database' || $keyword === 'Redis') {
                 $objectExt[$this->keywords[$keyword]] = $pool;
@@ -410,26 +407,6 @@ class Container implements ContainerInterface
         $this->provider->addListener($listener);
         $this->onEvents[$event] = $event;
         return $this;
-    }
-
-    /**
-     * @description get event
-     *
-     * @param string $keyword
-     *
-     * @param mixd ...$params
-     *
-     * @return EventInterface
-     */
-    private function getEvent(string $keyword, ...$params) : EventInterface
-    {
-        return match ($keyword) {
-            'ShardingDatabase' => new Event\ShardingDatabase(...$params),
-            'ShardingRedis' => new Event\ShardingRedis(...$params),
-            'Database' => new Event\Database(...$params),
-            'Redis' => new Event\Redis(...$params),
-            'GlobalId' => new Event\GlobalId(...$params),
-        };
     }
 
     /**

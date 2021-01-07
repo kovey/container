@@ -33,6 +33,18 @@ class ContainerTest extends TestCase
         $container->on('Database', function (Event\Database $event) {
             return $event->getPoolName();
         });
+        $container->on('ShardingDatabase', function (Event\ShardingDatabase $event) {
+            return $event->getPoolName();
+        });
+        $container->on('Redis', function (Event\Redis $event) {
+            return $event->getPoolName();
+        });
+        $container->on('ShardingRedis', function (Event\ShardingRedis $event) {
+            return $event->getPoolName();
+        });
+        $container->on('GlobalId', function (Event\GlobalId $event) {
+            return $event;
+        });
         $path = '';
         $method = '';
         $container->on('Router', function (Event\Router $event) use (&$path, &$method) {
@@ -54,11 +66,19 @@ class ContainerTest extends TestCase
         $this->assertEquals(1, count($args));
         $this->assertInstanceOf(Cases\Foo1::class, $args[0]);
         $this->assertEquals('db', $keywords['ext']['database']);
-        $this->assertTrue(!isset($keywords['ext']['redis']));
         $this->assertTrue($keywords['openTransaction']);
         $this->assertEquals('db', $keywords['database']);
         $this->assertEquals('/login/login', $path);
         $this->assertEquals('POST', $method);
+        $this->assertEquals('redis', $keywords['ext']['redis']);
+        $this->assertEquals('mysql', $keywords['ext']['globalId']->getDbPoolName());
+        $this->assertEquals('redis', $keywords['ext']['globalId']->getRedisPoolName());
+        $this->assertEquals('global_id', $keywords['ext']['globalId']->getTableName());
+        $this->assertEquals('test_id', $keywords['ext']['globalId']->getFieldName());
+        $this->assertEquals('id', $keywords['ext']['globalId']->getPrimaryName());
+        $keywords = $container->getKeywords('Kovey\Container\Cases\Foo', 'testSharding');
+        $this->assertEquals('mysql', $keywords['ext']['database']);
+        $this->assertEquals('redis', $keywords['ext']['redis']);
     }
 
     public function testGetFailure()

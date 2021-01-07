@@ -13,6 +13,7 @@ namespace Kovey\Container\Event;
 
 use Kovey\Event\EventInterface;
 
+#[\Attribute]
 class GlobalId implements EventInterface
 {
     /**
