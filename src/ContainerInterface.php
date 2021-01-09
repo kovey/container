@@ -72,8 +72,10 @@ interface ContainerInterface
      * @param string $dir
      *
      * @param string $namespace
+     *
+     * @param string $suffix = ''
      * 
      * @return $this
      */
-    public function parse(string $dir, string $namespace) : ContainerInterface;
+    public function parse(string $dir, string $namespace, string $suffix = '') : ContainerInterface;
 }

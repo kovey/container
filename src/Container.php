@@ -429,10 +429,12 @@ class Container implements ContainerInterface
      * @param string $dir
      *
      * @param string $namespace
+     *
+     * @param string $suffix = ''
      * 
      * @return $this
      */
-    public function parse(string $dir, string $namespace) : ContainerInterface
+    public function parse(string $dir, string $namespace, string $suffix = '') : ContainerInterface
     {
         if (!is_dir($dir)) {
             throw new ContainerException("$dir is not found");
@@ -444,7 +446,7 @@ class Container implements ContainerInterface
                 continue;
             }
 
-            $class = $namespace . '\\' . substr($file, 0, -4);
+            $class = $namespace . '\\' . substr($file, 0, -4) . $suffix;
             $this->resolve($class);
             $ref = new \ReflectionClass($class);
             foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {

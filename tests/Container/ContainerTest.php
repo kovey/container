@@ -128,7 +128,7 @@ class ContainerTest extends TestCase
             $method = $event->getMethod();
             $router = $event->getRouter();
         });
-        $container->parse(__DIR__ . '/Cases', 'Kovey\\Container\\Cases');
+        $container->parse(__DIR__ . '/Cases', 'Kovey\\Container\\Cases', '');
 
         $foo = $container->get('Kovey\Container\Cases\Foo', $traceId);
 
