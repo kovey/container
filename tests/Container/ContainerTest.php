@@ -18,6 +18,7 @@ require_once __DIR__ . '/Cases/Foo4.php';
 require_once __DIR__ . '/Cases/Foo5.php';
 require_once __DIR__ . '/Cases/Foo6.php';
 require_once __DIR__ . '/Cases/Foo7.php';
+require_once __DIR__ . '/Cases/FooController.php';
 
 use PHPUnit\Framework\TestCase;
 use Kovey\Container\Cases;
@@ -45,12 +46,6 @@ class ContainerTest extends TestCase
         $container->on('GlobalId', function (Event\GlobalId $event) {
             return $event;
         });
-        $path = '';
-        $method = '';
-        $container->on('Router', function (Event\Router $event) use (&$path, &$method) {
-            $path = $event->getPath();
-            $method = $event->getMethod();
-        });
 
         $this->assertInstanceOf(Cases\Foo::class, $foo);
         $this->assertEquals($traceId, $foo->traceId);
@@ -68,8 +63,6 @@ class ContainerTest extends TestCase
         $this->assertEquals('db', $keywords['ext']['database']);
         $this->assertTrue($keywords['openTransaction']);
         $this->assertEquals('db', $keywords['database']);
-        $this->assertEquals('/login/login', $path);
-        $this->assertEquals('POST', $method);
         $this->assertEquals('redis', $keywords['ext']['redis']);
         $this->assertEquals('mysql', $keywords['ext']['globalId']->getDbPoolName());
         $this->assertEquals('redis', $keywords['ext']['globalId']->getRedisPoolName());
@@ -129,9 +122,11 @@ class ContainerTest extends TestCase
         });
         $path = '';
         $method = '';
-        $container->on('Router', function (Event\Router $event) use (&$path, &$method) {
+        $router = '';
+        $container->on('Router', function (Event\Router $event) use (&$path, &$method, &$router) {
             $path = $event->getPath();
             $method = $event->getMethod();
+            $router = $event->getRouter();
         });
         $container->parse(__DIR__ . '/Cases', 'Kovey\\Container\\Cases');
 
@@ -139,6 +134,7 @@ class ContainerTest extends TestCase
 
         $this->assertEquals('/login/login', $path);
         $this->assertEquals('POST', $method);
+        $this->assertEquals('test@Kovey\Container\Cases\Foo', $router);
         $this->assertInstanceOf(Cases\Foo::class, $foo);
         $this->assertEquals($traceId, $foo->traceId);
         $foo1 = $foo->getFoo1();

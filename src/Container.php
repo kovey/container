@@ -202,7 +202,21 @@ class Container implements ContainerInterface
                 if (substr($attr->getName(), 0 - strlen($keyword)) === $keyword) {
                     $isKeywords = true;
                     if ($keyword === 'Router') {
-                        $this->dispatch->dispatch($attr->newInstance());
+                        $suffix = substr($method->class, -10);
+                        if ($suffix !== 'Controller') {
+                            break;
+                        }
+
+                        $suffix = substr($method->name, -6);
+                        if ($suffix !== 'Action') {
+                            break;
+                        }
+
+                        $router = $attr->newInstance();
+                        $router->setController(substr($method->class, 0, -10))
+                               ->setAction(substr($method->name, 0, -6));
+
+                        $this->dispatch->dispatch($router);
                         break;
                     }
 

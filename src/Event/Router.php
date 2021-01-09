@@ -75,4 +75,21 @@ class Router implements EventInterface
     {
         return $this->method;
     }
+
+    public function getRouter() : string
+    {
+        return $this->action . '@' . $this->controller;
+    }
+
+    public function setAction(string $action)
+    {
+        $this->action = $action;
+        return $this;
+    }
+
+    public function setController(string $controller)
+    {
+        $this->controller = $controller;
+        return $this;
+    }
 }
