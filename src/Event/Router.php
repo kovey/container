@@ -30,10 +30,16 @@ class Router implements EventInterface
      */
     private string $method;
 
+    private string $controller;
+
+    private string $action;
+
     public function __construct(string $path, string $method)
     {
         $this->path = $path;
         $this->method = $method;
+        $this->controller = '';
+        $this->action = '';
     }
 
     /**
