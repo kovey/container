@@ -34,6 +34,8 @@ class Router implements EventInterface
 
     private string $action;
 
+    private Array $rules;
+
     public function __construct(string $path, string $method)
     {
         $this->path = $path;
@@ -97,5 +99,16 @@ class Router implements EventInterface
     {
         $this->controller = $controller;
         return $this;
+    }
+
+    public function setRules(Array $rules)
+    {
+        $this->rules = $rules;
+        return $this;
+    }
+
+    public function getRules() : Array
+    {
+        return $this->rules;
     }
 }

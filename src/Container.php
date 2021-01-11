@@ -196,6 +196,20 @@ class Container implements ContainerInterface
             'arguments' => array()
         );
 
+        $validRules = array();
+
+        foreach ($method->getAttributes() as $attr) {
+            $argCount = count($attr->getArguments());
+            if ($argCount < 2) {
+                continue;
+            }
+            $lastArg = $attr->getArguments()[$argCount - 1];
+            if ($lastArg !== 'KOVEY_ARG_VALID_RULE') {
+                continue;
+            }
+            $validRules[] = $attr->newInstance();
+        }
+
         foreach ($method->getAttributes() as $attr) {
             $isKeywords = false;
             foreach (array_keys($this->keywords) as $keyword) {
@@ -214,7 +228,8 @@ class Container implements ContainerInterface
 
                         $router = $attr->newInstance();
                         $router->setController(substr($method->class, 0, -10))
-                               ->setAction(substr($method->name, 0, -6));
+                               ->setAction(substr($method->name, 0, -6))
+                               ->setRules($validRules);
 
                         $this->dispatch->dispatch($router);
                         break;
@@ -446,7 +461,7 @@ class Container implements ContainerInterface
                 continue;
             }
 
-            $class = $namespace . '\\' . substr($file, 0, -4) . $suffix;
+            $class = trim($namespace . '\\' . substr($file, 0, -4) . $suffix, '\\');
             $this->resolve($class);
             $ref = new \ReflectionClass($class);
             foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {

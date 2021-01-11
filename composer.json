@@ -17,7 +17,7 @@
         }
     ],
     "require": {
-        "php": ">=8.0",
+        "php": "^8.0",
         "kovey/event": "^1.0"
     },
     "require-dev": {
