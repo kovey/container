@@ -207,10 +207,14 @@ class Container implements ContainerInterface
             if ($lastArg !== 'KOVEY_ARG_VALID_RULE') {
                 continue;
             }
-            $validRules[] = $attr->newInstance();
+            $validRules[$attr->getName()] = $attr->newInstance();
         }
 
         foreach ($method->getAttributes() as $attr) {
+            if (isset($validRules[$attr->getName()])) {
+                continue;
+            }
+
             $isKeywords = false;
             foreach (array_keys($this->keywords) as $keyword) {
                 if (substr($attr->getName(), 0 - strlen($keyword)) === $keyword) {
