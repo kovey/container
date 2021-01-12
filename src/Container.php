@@ -17,9 +17,12 @@ use Kovey\Event\Listener\ListenerProvider;
 use Kovey\Event\Listener\Listener;
 use Kovey\Event\Dispatch;
 use Kovey\Event\EventInterface;
+use Kovey\Validator\RuleInterface;
 
 class Container implements ContainerInterface
 {
+    const CLASS_METHOD_CONSTRUCT = '__construct';
+
     /**
      * @description cache
      *
@@ -87,13 +90,13 @@ class Container implements ContainerInterface
         $this->methods = array();
         $this->onEvents = array();
         $this->keywords = array(
-            'ShardingDatabase' => 'database', 
-            'ShardingRedis' => 'redis', 
-            'Transaction' => true, 
-            'Database' => 'database', 
-            'Redis' => 'redis', 
-            'GlobalId' => 'globalId',
-            'Router' => true
+            Event\ShardingDatabase::class => 'database', 
+            Event\ShardingRedis::class => 'redis', 
+            Event\Transaction::class => true, 
+            Event\Database::class => 'database', 
+            Event\Redis::class => 'redis', 
+            Event\GlobalId::class => 'globalId',
+            Event\Router::class => true
         );
 
         $this->provider = new ListenerProvider();
@@ -125,8 +128,8 @@ class Container implements ContainerInterface
 
         if (count($args) < 1) {
             if ($class instanceof \ReflectionClass) {
-                if ($class->hasMethod('__construct')) {
-                    $args = $this->getMethodArguments($class->getName(), '__construct', $traceId);
+                if ($class->hasMethod(self::CLASS_METHOD_CONSTRUCT)) {
+                    $args = $this->getMethodArguments($class->getName(), self::CLASS_METHOD_CONSTRUCT, $traceId);
                 }
             }
         }
@@ -198,12 +201,19 @@ class Container implements ContainerInterface
 
         $validRules = array();
 
-        foreach ($method->getAttributes() as $attr) {
-            if (!$attr->isRepeated() || $attr->getTarget() != \Attribute::TARGET_METHOD) {
-                continue;
-            }
+        if ($method->getName() !== self::CLASS_METHOD_CONSTRUCT) {
+            foreach ($method->getAttributes() as $attr) {
+                if (isset($this->keywords[$attr->getName()])) {
+                    continue;
+                }
 
-            $validRules[$attr->getName()] = $attr->newInstance();
+                $validRule = $attr->newInstance();
+                if (!$validRule instanceof RuleInterface) {
+                    continue;
+                }
+
+                $validRules[$attr->getName()] = $validRule;
+            }
         }
 
         foreach ($method->getAttributes() as $attr) {
@@ -211,40 +221,37 @@ class Container implements ContainerInterface
                 continue;
             }
 
-            $isKeywords = false;
-            foreach (array_keys($this->keywords) as $keyword) {
-                if (substr($attr->getName(), 0 - strlen($keyword)) === $keyword) {
-                    $isKeywords = true;
-                    if ($keyword === 'Router') {
-                        $suffix = substr($method->class, -10);
-                        if ($suffix !== 'Controller') {
-                            break;
-                        }
-
-                        $suffix = substr($method->name, -6);
-                        if ($suffix !== 'Action') {
-                            break;
-                        }
-
-                        $router = $attr->newInstance();
-                        $router->setController(substr($method->class, 0, -10))
-                               ->setAction(substr($method->name, 0, -6))
-                               ->setRules($validRules);
-
-                        $this->dispatch->dispatch($router);
-                        break;
-                    }
-
-                    $attrs['keywords'][$keyword] = $attr;
-                    break;
-                }
-            }
-
-            if ($isKeywords) {
+            if (!isset($this->keywords[$attr->getName()])) {
+                $attrs['arguments'][] = $attr;
                 continue;
             }
 
-            $attrs['arguments'][] = $attr;
+            if ($method->getName() === self::CLASS_METHOD_CONSTRUCT) {
+                continue;
+            }
+
+            if ($attr->getName() !== Event\Router::class) {
+                $attrs['keywords'][$attr->getName()] = $attr;
+                continue;
+            }
+
+            $suffix = substr($method->class, 0 - strlen(Event\Router::ROUTER_CONTROLLER));
+            if ($suffix !== Event\Router::ROUTER_CONTROLLER) {
+                continue;
+            }
+
+            $suffix = substr($method->name, 0 - strlen(Event\Router::ROUTER_ACTION));
+            if ($suffix !== Event\Router::ROUTER_ACTION) {
+                continue;
+            }
+
+            $router = $attr->newInstance();
+            $router->setController(substr($method->class, 0, 0 - strlen(Event\Router::ROUTER_CONTROLLER)))
+                   ->setAction(substr($method->name, 0, 0 - strlen(Event\Router::ROUTER_ACTION)))
+                   ->setRules($validRules);
+
+            $this->dispatch->dispatch($router);
+
         }
 
         return $attrs;
@@ -374,14 +381,14 @@ class Container implements ContainerInterface
     {
         $classMethod = $class . '::' . $method;
         $this->methods[$classMethod] ??= $this->resolveMethod($classMethod);
-        $objectExt = array(
+        $keywords = array(
             'ext' => array()
         );
 
         $hasTransation = false;
         $hasDatabase = false;
         foreach ($this->methods[$classMethod]['keywords'] as $keyword => $event) {
-            if ($keyword === 'Transaction') {
+            if ($keyword === Event\Transaction::class) {
                 $hasTransation = true;
                 continue;
             }
@@ -390,26 +397,26 @@ class Container implements ContainerInterface
                 continue;
             }
 
-            if ($keyword === 'Database') {
+            if ($keyword === Event\Database::class) {
                 $hasDatabase = true;
             }
 
             $pool = $this->dispatch->dispatchWithReturn($event->newInstance());
 
-            if ($keyword === 'Database' || $keyword === 'Redis') {
-                $objectExt[$this->keywords[$keyword]] = $pool;
+            if ($keyword === Event\Database::class || $keyword === Event\Redis::class) {
+                $keywords[$this->keywords[$keyword]] = $pool;
                 if (is_object($pool) && method_exists($pool, 'getConnection')) {
-                    $objectExt['ext'][$this->keywords[$keyword]] = $pool->getConnection();
+                    $keywords['ext'][$this->keywords[$keyword]] = $pool->getConnection();
                 } else {
-                    $objectExt['ext'][$this->keywords[$keyword]] = $pool;
+                    $keywords['ext'][$this->keywords[$keyword]] = $pool;
                 }
             } else {
-                $objectExt['ext'][$this->keywords[$keyword]] = $pool;
+                $keywords['ext'][$this->keywords[$keyword]] = $pool;
             }
         }
 
-        $objectExt['openTransaction'] = $hasTransation && $hasDatabase;
-        return $objectExt;
+        $keywords['openTransaction'] = $hasTransation && $hasDatabase;
+        return $keywords;
     }
 
     /**
@@ -434,7 +441,7 @@ class Container implements ContainerInterface
         $listener = new Listener();
         $listener->addEvent(self::$events[$event], $fun);
         $this->provider->addListener($listener);
-        $this->onEvents[$event] = $event;
+        $this->onEvents[self::$events[$event]] = $event;
         return $this;
     }
 

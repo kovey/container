@@ -16,6 +16,10 @@ use Kovey\Event\EventInterface;
 #[\Attribute]
 class Router implements EventInterface
 {
+    const ROUTER_CONTROLLER = 'Controller';
+
+    const ROUTER_ACTION = 'Action';
+
     /**
      * @description path
      *

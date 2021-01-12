@@ -16,6 +16,7 @@ use Kovey\Container\Event\ShardingDatabase;
 use Kovey\Container\Event\Redis;
 use Kovey\Container\Event\ShardingRedis;
 use Kovey\Container\Event\GlobalId;
+use Kovey\Container\Event\Transaction;
 
 class Foo
 {
