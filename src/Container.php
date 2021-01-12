@@ -199,17 +199,11 @@ class Container implements ContainerInterface
         $validRules = array();
 
         foreach ($method->getAttributes() as $attr) {
-            $argCount = count($attr->getArguments());
-            if ($argCount < 2) {
-                continue;
-            }
-            $lastArg = $attr->getArguments()[$argCount - 1];
-            if ($lastArg !== 'KOVEY_ARG_VALID_RULE') {
+            if (!$attr->isRepeated() || $attr->getTarget() != \Attribute::TARGET_METHOD) {
                 continue;
             }
 
-            $ruleRef = new \ReflectionClass($attr->getName());
-            $validRules[$attr->getName()] = $ruleRef->newInstanceArgs($attr->getArguments());
+            $validRules[$attr->getName()] = $attr->newInstance();
         }
 
         foreach ($method->getAttributes() as $attr) {
