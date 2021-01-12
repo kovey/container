@@ -251,7 +251,6 @@ class Container implements ContainerInterface
                    ->setRules($validRules);
 
             $this->dispatch->dispatch($router);
-
         }
 
         return $attrs;
@@ -385,11 +384,11 @@ class Container implements ContainerInterface
             'ext' => array()
         );
 
-        $hasTransation = false;
+        $hasTransaction = false;
         $hasDatabase = false;
         foreach ($this->methods[$classMethod]['keywords'] as $keyword => $event) {
             if ($keyword === Event\Transaction::class) {
-                $hasTransation = true;
+                $hasTransaction = true;
                 continue;
             }
 
@@ -415,7 +414,7 @@ class Container implements ContainerInterface
             }
         }
 
-        $keywords['openTransaction'] = $hasTransation && $hasDatabase;
+        $keywords['openTransaction'] = $hasTransaction && $hasDatabase;
         return $keywords;
     }
 
