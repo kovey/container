@@ -2,7 +2,7 @@
 /**
  * @description container
  *
- * @package Parse
+ * @package Container
  *
  * @author kovey
  *
@@ -118,7 +118,7 @@ class Container implements ContainerInterface
      *
      * @throws Throwable
      */
-    public function get(string $class, string $traceId, Array $ext = array(), ...$args)
+    public function get(string $class, string $traceId, Array $ext = array(), ...$args) : mixed
     {
         if (!isset($this->instances[$class])) {
             $this->resolve($class);
@@ -152,7 +152,7 @@ class Container implements ContainerInterface
      *
      * @return mixed
      */
-    private function bind(\ReflectionClass | \ReflectionAttribute $class, string $traceId, Array $dependencies, Array $ext = array(), Array $args = array())
+    private function bind(\ReflectionClass | \ReflectionAttribute $class, string $traceId, Array $dependencies, Array $ext = array(), Array $args = array()) : mixed
     {
         $obj = null;
         if (count($args) > 0) {
