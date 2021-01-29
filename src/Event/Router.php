@@ -16,9 +16,47 @@ use Kovey\Event\EventInterface;
 #[\Attribute]
 class Router implements EventInterface
 {
+    /**
+     * @description router controller suffix
+     *
+     * @var string
+     */
     const ROUTER_CONTROLLER = 'Controller';
 
+    /**
+     * @description router action suffix
+     *
+     * @var string
+     */
     const ROUTER_ACTION = 'Action';
+
+    /**
+     * @description http request method get
+     *
+     * @var string
+     */
+    const ROUTER_METHOD_GET = 'GET';
+
+    /**
+     * @description http request method post
+     *
+     * @var string
+     */
+    const ROUTER_METHOD_POST = 'POST';
+
+    /**
+     * @description http request method put
+     *
+     * @var string
+     */
+    const ROUTER_METHOD_PUT = 'PUT';
+
+    /**
+     * @description http request method delete
+     *
+     * @var string
+     */
+    const ROUTER_METHOD_DELETE = 'DELETE';
 
     /**
      * @description path
@@ -34,10 +72,25 @@ class Router implements EventInterface
      */
     private string $method;
 
+    /**
+     * @description controller name
+     *
+     * @var string
+     */
     private string $controller;
 
+    /**
+     * @description action name
+     *
+     * @var string
+     */
     private string $action;
 
+    /**
+     * @description validator rules
+     *
+     * @var Array
+     */
     private Array $rules;
 
     public function __construct(string $path, string $method)
@@ -88,29 +141,60 @@ class Router implements EventInterface
         return $this->method;
     }
 
+    /**
+     * @description get router
+     *
+     * @return string
+     */
     public function getRouter() : string
     {
         return $this->action . '@' . $this->controller;
     }
 
-    public function setAction(string $action)
+    /**
+     * @description set action
+     *
+     * @param string $action
+     *
+     * @return Router
+     */
+    public function setAction(string $action) : Router
     {
         $this->action = $action;
         return $this;
     }
 
-    public function setController(string $controller)
+    /**
+     * @description set controller
+     *
+     * @param string $controller
+     *
+     * @return Router
+     */
+    public function setController(string $controller) : Router
     {
         $this->controller = $controller;
         return $this;
     }
 
-    public function setRules(Array $rules)
+    /**
+     * @description set rules
+     *
+     * @param Array $rules
+     *
+     * @return Array
+     */
+    public function setRules(Array $rules) : Router
     {
         $this->rules = $rules;
         return $this;
     }
 
+    /**
+     * @description get rules
+     *
+     * @return Array
+     */
     public function getRules() : Array
     {
         return $this->rules;
