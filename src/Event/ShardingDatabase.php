@@ -13,7 +13,7 @@ namespace Kovey\Container\Event;
 
 use Kovey\Event\EventInterface;
 
-#[\Attribute]
+#[\Attribute(\Attribute::TARGET_METHOD)]
 class ShardingDatabase implements EventInterface
 {
     /**
