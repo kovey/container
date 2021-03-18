@@ -13,9 +13,7 @@ namespace Kovey\Container;
 
 use Kovey\Container\Exception\ContainerException;
 use Kovey\Container\Event;
-use Kovey\Event\Listener\ListenerProvider;
-use Kovey\Event\Listener\Listener;
-use Kovey\Event\Dispatch;
+use Kovey\Event\EventManager;
 use Kovey\Event\EventInterface;
 use Kovey\Validator\RuleInterface;
 
@@ -45,39 +43,11 @@ class Container implements ContainerInterface
     private Array $keywords;
 
     /**
-     * @description on events
+     * @description event manager
      *
-     * @var Array
+     * @var EventManager
      */
-    private Array $onEvents;
-
-    /**
-     * @description events
-     *
-     * @var Array
-     */
-    private static Array $events = array(
-        'ShardingDatabase' => Event\ShardingDatabase::class,
-        'ShardingRedis' => Event\ShardingRedis::class,
-        'Database' => Event\Database::class,
-        'Redis' => Event\Redis::class,
-        'GlobalId' => Event\GlobalId::class,
-        'Router' => Event\Router::class
-    );
-
-    /**
-     * @description dispatch
-     *
-     * @var Dispatch
-     */
-    private Dispatch $dispatch;
-
-    /**
-     * @description listener provider
-     *
-     * @var ListenerProvider
-     */
-    private ListenerProvider $provider;
+    private EventManager $eventManager;
 
     /**
      * @description construct
@@ -88,7 +58,6 @@ class Container implements ContainerInterface
     {
         $this->instances = array();
         $this->methods = array();
-        $this->onEvents = array();
         $this->keywords = array(
             Event\ShardingDatabase::class => 'database', 
             Event\ShardingRedis::class => 'redis', 
@@ -98,9 +67,14 @@ class Container implements ContainerInterface
             Event\GlobalId::class => 'globalId',
             Event\Router::class => true
         );
-
-        $this->provider = new ListenerProvider();
-        $this->dispatch = new Dispatch($this->provider);
+        $this->eventManager = new EventManager(array(
+            'ShardingDatabase' => Event\ShardingDatabase::class,
+            'ShardingRedis' => Event\ShardingRedis::class,
+            'Database' => Event\Database::class,
+            'Redis' => Event\Redis::class,
+            'GlobalId' => Event\GlobalId::class,
+            'Router' => Event\Router::class
+        ));
     }
 
     /**
@@ -250,7 +224,7 @@ class Container implements ContainerInterface
                    ->setAction(substr($method->name, 0, 0 - strlen(Event\Router::ROUTER_ACTION)))
                    ->setRules($validRules);
 
-            $this->dispatch->dispatch($router);
+            $this->eventManager->dispatch($router);
         }
 
         return $attrs;
@@ -392,7 +366,7 @@ class Container implements ContainerInterface
                 continue;
             }
 
-            if (!isset($this->onEvents[$keyword])) {
+            if (!$this->eventManager->listenedByClass($keyword)) {
                 continue;
             }
 
@@ -400,7 +374,7 @@ class Container implements ContainerInterface
                 $hasDatabase = true;
             }
 
-            $pool = $this->dispatch->dispatchWithReturn($event->newInstance());
+            $pool = $this->eventManager->dispatchWithReturn($event->newInstance());
 
             if ($keyword === Event\Database::class || $keyword === Event\Redis::class) {
                 $keywords[$this->keywords[$keyword]] = $pool;
@@ -429,18 +403,7 @@ class Container implements ContainerInterface
      */
     public function on(string $event, callable | Array $fun) : ContainerInterface
     {
-        if (!isset(self::$events[$event])) {
-            throw new ContainerException("$event is not support.");
-        }
-
-        if (!is_callable($fun)) {
-            throw new ContainerException('fun is not callable');
-        }
-
-        $listener = new Listener();
-        $listener->addEvent(self::$events[$event], $fun);
-        $this->provider->addListener($listener);
-        $this->onEvents[self::$events[$event]] = $event;
+        $this->eventManager->addEvent($event, $fun);
         return $this;
     }
 
