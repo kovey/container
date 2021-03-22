@@ -93,12 +93,36 @@ class Router implements EventInterface
      */
     private Array $rules;
 
-    public function __construct(string $path, string $method)
+    /**
+     * @description view path
+     *
+     * @var string | bool
+     */
+    private string | bool $template;
+
+    /**
+     * @description layout
+     *
+     * @var string | bool
+     */
+    private string | bool $layout;
+
+    /**
+     * @description layout dir
+     *
+     * @var string
+     */
+    private string $layoutDir;
+
+    public function __construct(string $path, string $method, string | bool $template = '', string | bool $layout = '', string $layoutDir = '')
     {
         $this->path = $path;
         $this->method = $method;
         $this->controller = '';
         $this->action = '';
+        $this->template = $template;
+        $this->layout = $layout;
+        $this->layoutDir = $layoutDir;
     }
 
     /**
@@ -198,5 +222,35 @@ class Router implements EventInterface
     public function getRules() : Array
     {
         return $this->rules;
+    }
+
+    /**
+     * @description get template
+     *
+     * @return string | bool
+     */
+    public function getTemplate() : string | bool
+    {
+        return $this->template;
+    }
+
+    /**
+     * @description get layout
+     *
+     * @return string | bool
+     */
+    public function getLayout() : string | bool
+    {
+        return $this->layout;
+    }
+
+    /**
+     * @description get layout dir
+     *
+     * @return string
+     */
+    public function getLayoutDir() : string
+    {
+        return $this->layoutDir;
     }
 }
