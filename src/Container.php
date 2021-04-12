@@ -65,7 +65,8 @@ class Container implements ContainerInterface
             Event\Database::class => 'database', 
             Event\Redis::class => 'redis', 
             Event\GlobalId::class => 'globalId',
-            Event\Router::class => true
+            Event\Router::class => true,
+            Event\Protocol::class => true
         );
         $this->eventManager = new EventManager(array(
             'ShardingDatabase' => Event\ShardingDatabase::class,
@@ -73,7 +74,8 @@ class Container implements ContainerInterface
             'Database' => Event\Database::class,
             'Redis' => Event\Redis::class,
             'GlobalId' => Event\GlobalId::class,
-            'Router' => Event\Router::class
+            'Router' => Event\Router::class,
+            'Protocol' => Event\Protocol::class
         ));
     }
 
@@ -204,30 +206,58 @@ class Container implements ContainerInterface
                 continue;
             }
 
-            if ($attr->getName() !== Event\Router::class) {
-                $attrs['keywords'][$attr->getName()] = $attr;
+            if ($this->processKeywords($method, $attr, $validRules)) {
                 continue;
             }
 
-            $suffix = substr($method->class, 0 - strlen(Event\Router::ROUTER_CONTROLLER));
-            if ($suffix !== Event\Router::ROUTER_CONTROLLER) {
-                continue;
-            }
-
-            $suffix = substr($method->name, 0 - strlen(Event\Router::ROUTER_ACTION));
-            if ($suffix !== Event\Router::ROUTER_ACTION) {
-                continue;
-            }
-
-            $router = $attr->newInstance();
-            $router->setController(substr($method->class, 0, 0 - strlen(Event\Router::ROUTER_CONTROLLER)))
-                   ->setAction(substr($method->name, 0, 0 - strlen(Event\Router::ROUTER_ACTION)))
-                   ->setRules($validRules);
-
-            $this->eventManager->dispatch($router);
+            $attrs['keywords'][$attr->getName()] = $attr;
         }
 
         return $attrs;
+    }
+
+    private function processRouter(\ReflectionMethod $method, \ReflectionAttribute $attr, Array $validRules) : void
+    {
+        $suffix = substr($method->class, 0 - strlen(Event\Router::ROUTER_CONTROLLER));
+        if ($suffix !== Event\Router::ROUTER_CONTROLLER) {
+            return;
+        }
+
+        $suffix = substr($method->name, 0 - strlen(Event\Router::ROUTER_ACTION));
+        if ($suffix !== Event\Router::ROUTER_ACTION) {
+            return;
+        }
+
+        $router = $attr->newInstance();
+        $router->setController(substr($method->class, 0, 0 - strlen(Event\Router::ROUTER_CONTROLLER)))
+               ->setAction(substr($method->name, 0, 0 - strlen(Event\Router::ROUTER_ACTION)))
+               ->setRules($validRules);
+
+        $this->eventManager->dispatch($router);
+    }
+
+    private function processProcotol(\ReflectionMethod $method, \ReflectionAttribute $attr) : void
+    {
+        $protocol = $attr->newInstance();
+        $protocol->setHandler($method->class)
+            ->setMethod($method->name);
+
+        $this->eventManager->dispatch($protocol);
+    }
+
+    private function processKeywords(\ReflectionMethod $method, \ReflectionAttribute $attr, Array $validRules) : bool
+    {
+        if ($attr->getName() == Event\Router::class) {
+            $this->processRouter($method, $attr, $validRules);
+            return true;
+        }
+
+        if ($attr->getName() == Event\Protocol::class) {
+            $this->processProcotol($method, $attr);
+            return true;
+        }
+
+        return false;
     }
 
     /**

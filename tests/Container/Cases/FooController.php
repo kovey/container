@@ -12,6 +12,7 @@
 namespace Kovey\Container\Cases;
 
 use Kovey\Container\Event\Router;
+use Kovey\Container\Event\Protocol;
 
 class FooController
 {
@@ -19,5 +20,11 @@ class FooController
     public function testAction()
     {
         return 'test';
+    }
+
+    #[Protocol(1001, Protocol::class, Router::class)]
+    public function handler()
+    {
+        return 'handler';
     }
 }

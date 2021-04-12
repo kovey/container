@@ -123,11 +123,20 @@ class ContainerTest extends TestCase
         $path = '';
         $method = '';
         $router = '';
+        $code = 0;
+        $protobuf = '';
+        $base = '';
         $container->on('Router', function (Event\Router $event) use (&$path, &$method, &$router) {
             $path = $event->getPath();
             $method = $event->getMethod();
             $router = $event->getRouter();
-        });
+        })
+          ->on('Protocol', function (Event\Protocol $event) use (&$code, &$protobuf, &$base) {
+              $code = $event->getCode();
+              $protobuf = $event->getProtobuf();
+              $base = $event->getProtobufBase();
+          });
+
         $container->parse(__DIR__ . '/Cases', 'Kovey\\Container\\Cases', '');
 
         $foo = $container->get('Kovey\Container\Cases\Foo', $traceId);
@@ -135,6 +144,9 @@ class ContainerTest extends TestCase
         $this->assertEquals('/login/login', $path);
         $this->assertEquals('POST', $method);
         $this->assertEquals('test@Kovey\Container\Cases\Foo', $router);
+        $this->assertEquals(1001, $code);
+        $this->assertEquals(Event\Protocol::class, $protobuf);
+        $this->assertEquals(Event\Router::class, $base);
         $this->assertInstanceOf(Cases\Foo::class, $foo);
         $this->assertEquals($traceId, $foo->traceId);
         $foo1 = $foo->getFoo1();
