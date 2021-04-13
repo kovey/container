@@ -27,7 +27,7 @@ interface ContainerInterface
      *
      * @return mixed
      */
-    public function get(string $class, string $traceId, Array $ext = array(), ...$args) : mixed;
+    public function get(string $class, string $traceId, string $spanId, Array $ext = array(), ...$args) : mixed;
 
     /**
      * @description method arguments
@@ -42,7 +42,7 @@ interface ContainerInterface
      *
      * @return Array
      */
-    public function getMethodArguments(string $class, string $method, string $traceId, Array $ext = array()) : Array;
+    public function getMethodArguments(string $class, string $method, string $traceId, string $spanId, Array $ext = array()) : Array;
 
     /**
      * @description 获取关键字

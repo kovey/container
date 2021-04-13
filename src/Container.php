@@ -94,7 +94,7 @@ class Container implements ContainerInterface
      *
      * @throws Throwable
      */
-    public function get(string $class, string $traceId, Array $ext = array(), ...$args) : mixed
+    public function get(string $class, string $traceId, string $spanId, Array $ext = array(), ...$args) : mixed
     {
         if (!isset($this->instances[$class])) {
             $this->resolve($class);
@@ -105,12 +105,12 @@ class Container implements ContainerInterface
         if (count($args) < 1) {
             if ($class instanceof \ReflectionClass) {
                 if ($class->hasMethod(self::CLASS_METHOD_CONSTRUCT)) {
-                    $args = $this->getMethodArguments($class->getName(), self::CLASS_METHOD_CONSTRUCT, $traceId);
+                    $args = $this->getMethodArguments($class->getName(), self::CLASS_METHOD_CONSTRUCT, $traceId, $spanId);
                 }
             }
         }
 
-        return $this->bind($class, $traceId, $this->instances[$class->getName()]['dependencies'] ?? array(), $ext, $args);
+        return $this->bind($class, $traceId, $spanId, $this->instances[$class->getName()]['dependencies'] ?? array(), $ext, $args);
     }
 
     /**
@@ -128,7 +128,7 @@ class Container implements ContainerInterface
      *
      * @return mixed
      */
-    private function bind(\ReflectionClass | \ReflectionAttribute $class, string $traceId, Array $dependencies, Array $ext = array(), Array $args = array()) : mixed
+    private function bind(\ReflectionClass | \ReflectionAttribute $class, string $traceId, string $spanId, Array $dependencies, Array $ext = array(), Array $args = array()) : mixed
     {
         $obj = null;
         if (count($args) > 0) {
@@ -141,6 +141,10 @@ class Container implements ContainerInterface
             $obj->traceId = $traceId;
         }
 
+        if (!empty($spanId)) {
+            $obj->spanId = $spanId;
+        }
+
         foreach ($ext as $field => $val) {
             $obj->$field = $val;
         }
@@ -150,7 +154,7 @@ class Container implements ContainerInterface
         }
 
         foreach ($dependencies as $dependency) {
-            $dep = $this->bind($this->instances[$dependency['class']]['class'], $traceId, $this->instances[$dependency['class']]['dependencies'] ?? array(), $ext);
+            $dep = $this->bind($this->instances[$dependency['class']]['class'], $traceId, $spanId, $this->instances[$dependency['class']]['dependencies'] ?? array(), $ext);
             $dependency['property']->setValue($obj, $dep);
         }
 
@@ -357,14 +361,13 @@ class Container implements ContainerInterface
      *
      * @return Array
      */
-    public function getMethodArguments(string $class, string $method, string $traceId, Array $ext = array()) : Array
+    public function getMethodArguments(string $class, string $method, string $traceId, string $spanId, Array $ext = array()) : Array
     {
         $classMethod = $class . '::' . $method;
         $this->methods[$classMethod] ??= $this->resolveMethod($classMethod);
         $attrs = $this->methods[$classMethod]['arguments'];
-        array_walk ($attrs, function(&$attr) use ($traceId, $ext) {
-            $obj = $this->get($attr->getName(), $traceId, $ext, ...$attr->getArguments());
-            $obj->traceId = $traceId;
+        array_walk($attrs, function(&$attr) use ($traceId, $ext, $spanId) {
+            $obj = $this->get($attr->getName(), $traceId, $spanId, $ext, ...$attr->getArguments());
             $attr = $obj;
         });
 

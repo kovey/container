@@ -29,8 +29,9 @@ class ContainerTest extends TestCase
     public function testGet()
     {
         $traceId = hash('sha256', '123456');
+        $spanId = md5('123456');
         $container = new Container();
-        $foo = $container->get('Kovey\Container\Cases\Foo', $traceId);
+        $foo = $container->get('Kovey\Container\Cases\Foo', $traceId, $spanId);
         $container->on('Database', function (Event\Database $event) {
             return $event->getPoolName();
         });
@@ -49,14 +50,17 @@ class ContainerTest extends TestCase
 
         $this->assertInstanceOf(Cases\Foo::class, $foo);
         $this->assertEquals($traceId, $foo->traceId);
+        $this->assertEquals($spanId, $foo->spanId);
         $foo1 = $foo->getFoo1();
         $this->assertInstanceOf(Cases\Foo1::class, $foo1);
         $this->assertEquals($traceId, $foo1->traceId);
+        $this->assertEquals($spanId, $foo1->spanId);
         $foo2 = $foo1->getFoo2();
         $this->assertInstanceOf(Cases\Foo2::class, $foo2);
         $this->assertEquals($traceId, $foo2->traceId);
+        $this->assertEquals($spanId, $foo2->spanId);
         $this->assertEquals('this is test', $foo2->getName());
-        $args = $container->getMethodArguments('Kovey\Container\Cases\Foo', 'test', $traceId);
+        $args = $container->getMethodArguments('Kovey\Container\Cases\Foo', 'test', $traceId, $spanId);
         $keywords = $container->getKeywords('Kovey\Container\Cases\Foo', 'test');
         $this->assertEquals(1, count($args));
         $this->assertInstanceOf(Cases\Foo1::class, $args[0]);
@@ -77,45 +81,54 @@ class ContainerTest extends TestCase
     public function testGetFailure()
     {
         $traceId = hash('sha256', '123456');
+        $spanId = md5('12355');
         $this->expectException(\ReflectionException::class);
         $container = new Container();
-        $foo = $container->get('Kovey\\NotExistsClass', $traceId);
+        $foo = $container->get('Kovey\\NotExistsClass', $traceId, $spanId);
     }
 
     public function testGetFailureWithNonAttributeClass()
     {
         $traceId = hash('sha256', '123456');
+        $spanId = md5('12355');
         $this->expectException(\Error::class);
         $container = new Container();
-        $foo = $container->get('Kovey\\Container\\Cases\\Foo4', $traceId);
+        $foo = $container->get('Kovey\\Container\\Cases\\Foo4', $traceId, $spanId);
     }
 
     public function testGetConstructDefault()
     {
         $traceId = hash('sha256', '123456');
+        $spanId = md5('12355');
         $container = new Container();
-        $foo5 = $container->get('Kovey\\Container\\Cases\\Foo5', $traceId);
+        $foo5 = $container->get('Kovey\\Container\\Cases\\Foo5', $traceId, $spanId);
         $this->assertInstanceOf(Cases\Foo5::class, $foo5);
         $this->assertEquals($traceId, $foo5->traceId);
+        $this->assertEquals($spanId, $foo5->spanId);
         $foo6 = $foo5->getFoo6();
         $this->assertInstanceOf(Cases\Foo6::class, $foo6);
         $this->assertEquals($traceId, $foo6->traceId);
+        $this->assertEquals($spanId, $foo6->spanId);
         $foo7 = $foo6->getFoo7();
         $this->assertInstanceOf(Cases\Foo7::class, $foo7);
         $this->assertEquals($traceId, $foo7->traceId);
+        $this->assertEquals($spanId, $foo7->spanId);
         $this->assertEquals('this is foo7', $foo7->getName());
         $foo1 = $foo7->getFoo1();
         $this->assertInstanceOf(Cases\Foo1::class, $foo1);
         $this->assertEquals($traceId, $foo1->traceId);
+        $this->assertEquals($spanId, $foo1->spanId);
         $foo2 = $foo1->getFoo2();
         $this->assertInstanceOf(Cases\Foo2::class, $foo2);
         $this->assertEquals($traceId, $foo2->traceId);
+        $this->assertEquals($spanId, $foo2->spanId);
         $this->assertEquals('this is test', $foo2->getName());
     }
 
     public function testParse()
     {
         $traceId = hash('sha256', '123456');
+        $spanId = md5('12355');
         $container = new Container();
         $container->on('Database', function (Event\Database $event) {
             return $event->getPoolName();
@@ -139,7 +152,7 @@ class ContainerTest extends TestCase
 
         $container->parse(__DIR__ . '/Cases', 'Kovey\\Container\\Cases', '');
 
-        $foo = $container->get('Kovey\Container\Cases\Foo', $traceId);
+        $foo = $container->get('Kovey\Container\Cases\Foo', $traceId, $spanId);
 
         $this->assertEquals('/login/login', $path);
         $this->assertEquals('POST', $method);
@@ -149,17 +162,22 @@ class ContainerTest extends TestCase
         $this->assertEquals(Event\Router::class, $base);
         $this->assertInstanceOf(Cases\Foo::class, $foo);
         $this->assertEquals($traceId, $foo->traceId);
+        $this->assertEquals($spanId, $foo->spanId);
         $foo1 = $foo->getFoo1();
         $this->assertInstanceOf(Cases\Foo1::class, $foo1);
         $this->assertEquals($traceId, $foo1->traceId);
+        $this->assertEquals($spanId, $foo1->spanId);
         $foo2 = $foo1->getFoo2();
         $this->assertInstanceOf(Cases\Foo2::class, $foo2);
         $this->assertEquals($traceId, $foo2->traceId);
+        $this->assertEquals($spanId, $foo2->spanId);
         $this->assertEquals('this is test', $foo2->getName());
-        $args = $container->getMethodArguments('Kovey\Container\Cases\Foo', 'test', $traceId);
+        $args = $container->getMethodArguments('Kovey\Container\Cases\Foo', 'test', $traceId, $spanId);
         $keywords = $container->getKeywords('Kovey\Container\Cases\Foo', 'test');
         $this->assertEquals(1, count($args));
         $this->assertInstanceOf(Cases\Foo1::class, $args[0]);
+        $this->assertEquals($traceId, $args[0]->traceId);
+        $this->assertEquals($spanId, $args[0]->spanId);
         $this->assertEquals('db', $keywords['ext']['database']);
         $this->assertTrue(!isset($keywords['ext']['redis']));
         $this->assertTrue($keywords['openTransaction']);
