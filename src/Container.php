@@ -180,6 +180,7 @@ class Container implements ContainerInterface
         );
 
         $validRules = array();
+        $ruleKeywords = array();
 
         if ($method->getName() !== self::CLASS_METHOD_CONSTRUCT) {
             foreach ($method->getAttributes() as $attr) {
@@ -192,12 +193,13 @@ class Container implements ContainerInterface
                     continue;
                 }
 
-                $validRules[$attr->getName()] = $validRule;
+                $validRules[] = $validRule;
+                $ruleKeywords[$attr->getName()] = 1;
             }
         }
 
         foreach ($method->getAttributes() as $attr) {
-            if (isset($validRules[$attr->getName()])) {
+            if (isset($ruleKeywords[$attr->getName()])) {
                 continue;
             }
 
