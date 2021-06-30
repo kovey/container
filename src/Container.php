@@ -110,6 +110,19 @@ class Container implements ContainerInterface
             }
         }
 
+        array_walk($ext, function (&$val) use ($traceId, $spanId) {
+            if (!is_object($val)) {
+                return;
+            }
+
+            if (!empty($traceId)) {
+                $val->traceId = $traceId;
+            }
+            if (!empty($spanId)) {
+                $val->spanId = $spanId;
+            }
+        });
+
         return $this->bind($class, $traceId, $spanId, $this->instances[$class->getName()]['dependencies'] ?? array(), $ext, $args);
     }
 
