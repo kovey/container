@@ -16,6 +16,9 @@ use Kovey\Container\Event;
 use Kovey\Event\EventManager;
 use Kovey\Event\EventInterface;
 use Kovey\Validator\RuleInterface;
+use Kovey\Container\Keyword\Fields;
+use Kovey\Container\Keyword\EventName;
+use Kovey\Container\Module;
 
 class Container implements ContainerInterface
 {
@@ -59,23 +62,23 @@ class Container implements ContainerInterface
         $this->instances = array();
         $this->methods = array();
         $this->keywords = array(
-            Event\ShardingDatabase::class => 'database', 
-            Event\ShardingRedis::class => 'redis', 
-            Event\Transaction::class => true, 
-            Event\Database::class => 'database', 
-            Event\Redis::class => 'redis', 
-            Event\GlobalId::class => 'globalId',
-            Event\Router::class => true,
-            Event\Protocol::class => true
+            Event\ShardingDatabase::class => Fields::KEYWORD_DATABASE, 
+            Event\ShardingRedis::class => Fields::KEYWORD_REDIS, 
+            Event\Transaction::class => Fields::KEYWORD_BOOL_TRUE, 
+            Event\Database::class => Fields::KEYWORD_DATABASE, 
+            Event\Redis::class => Fields::KEYWORD_REDIS, 
+            Event\GlobalId::class => Fields::KEYWORD_GLOBAL_ID,
+            Event\Router::class => Fields::KEYWORD_BOOL_TRUE,
+            Event\Protocol::class => Fields::KEYWORD_BOOL_TRUE
         );
         $this->eventManager = new EventManager(array(
-            'ShardingDatabase' => Event\ShardingDatabase::class,
-            'ShardingRedis' => Event\ShardingRedis::class,
-            'Database' => Event\Database::class,
-            'Redis' => Event\Redis::class,
-            'GlobalId' => Event\GlobalId::class,
-            'Router' => Event\Router::class,
-            'Protocol' => Event\Protocol::class
+            EventName::EVENT_SHARDING_DATABASE => Event\ShardingDatabase::class,
+            EventName::EVENT_SHARDING_REDIS => Event\ShardingRedis::class,
+            EventName::EVENT_DATABASE => Event\Database::class,
+            EventName::EVENT_REDIS => Event\Redis::class,
+            EventName::EVENT_GLOBAL_ID => Event\GlobalId::class,
+            EventName::EVENT_ROUTER => Event\Router::class,
+            EventName::EVENT_PROTOCOL => Event\Protocol::class
         ));
     }
 
@@ -158,8 +161,22 @@ class Container implements ContainerInterface
             $obj->spanId = $spanId;
         }
 
-        foreach ($ext as $field => $val) {
-            $obj->$field = $val;
+        if ($obj instanceof Module\HasDbInterface) {
+            if (isset($ext[Fields::KEYWORD_DATABASE])) {
+                $obj->setDatabase($val);
+            }
+        }
+
+        if ($obj instanceof Module\HasRedisInterface) {
+            if (isset($ext[Fields::KEYWORD_REDIS])) {
+                $obj->setRedis($val);
+            }
+        }
+
+        if ($obj instanceof Module\HasGlobalIdInterface) {
+            if (isset($ext[Fields::KEYWORD_GLOBAL_ID])) {
+                $obj->setGlobalId($val);
+            }
         }
 
         if (count($dependencies) < 1) {
@@ -423,20 +440,11 @@ class Container implements ContainerInterface
             }
 
             $pool = $this->eventManager->dispatchWithReturn($event->newInstance());
-
-            if ($keyword === Event\Database::class || $keyword === Event\Redis::class) {
-                $keywords[$this->keywords[$keyword]] = $pool;
-                if (is_object($pool) && method_exists($pool, 'getConnection')) {
-                    $keywords['ext'][$this->keywords[$keyword]] = $pool->getConnection();
-                } else {
-                    $keywords['ext'][$this->keywords[$keyword]] = $pool;
-                }
-            } else {
-                $keywords['ext'][$this->keywords[$keyword]] = $pool;
-            }
+            $keywords[$this->keywords[$keyword]] = $pool;
+            $keywords['ext'][$this->keywords[$keyword]] = $pool;
         }
 
-        $keywords['openTransaction'] = $hasTransaction && $hasDatabase;
+        $keywords[Fields::KEYWORD_OPEN_TRANSACTION] = $hasTransaction && $hasDatabase;
         return $keywords;
     }
 
