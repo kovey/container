@@ -163,19 +163,19 @@ class Container implements ContainerInterface
 
         if ($obj instanceof Module\HasDbInterface) {
             if (isset($ext[Fields::KEYWORD_DATABASE])) {
-                $obj->setDatabase($val);
+                $obj->setDatabase($ext[Fields::KEYWORD_DATABASE]);
             }
         }
 
         if ($obj instanceof Module\HasRedisInterface) {
             if (isset($ext[Fields::KEYWORD_REDIS])) {
-                $obj->setRedis($val);
+                $obj->setRedis($ext[Fields::KEYWORD_REDIS]);
             }
         }
 
         if ($obj instanceof Module\HasGlobalIdInterface) {
             if (isset($ext[Fields::KEYWORD_GLOBAL_ID])) {
-                $obj->setGlobalId($val);
+                $obj->setGlobalId($ext[Fields::KEYWORD_GLOBAL_ID]);
             }
         }
 
