@@ -17,13 +17,6 @@ use Kovey\Event\EventInterface;
 class GlobalId implements EventInterface
 {
     /**
-     * @description db pool name
-     *
-     * @var string
-     */
-    private string $dbPoolName;
-
-    /**
      * @description redis pool name
      *
      * @var string
@@ -31,33 +24,16 @@ class GlobalId implements EventInterface
     private string $redisPoolName;
 
     /**
-     * @description table name
+     * @description global key
      *
      * @var string
      */
-    private string $tableName;
+    private string $globalKey;
 
-    /**
-     * @description field name
-     *
-     * @var string
-     */
-    private string $fieldName;
-
-    /**
-     * @description primary name
-     *
-     * @var string
-     */
-    private string $primaryName;
-
-    public function __construct(string $dbPoolName, string $redisPoolName, string $tableName, string $fieldName, string $primaryName)
+    public function __construct(string $redisPoolName, string $globalKey)
     {
-        $this->dbPoolName = $dbPoolName;
         $this->redisPoolName = $redisPoolName;
-        $this->tableName = $tableName;
-        $this->fieldName = $fieldName;
-        $this->primaryName = $primaryName;
+        $this->globalKey = $globalKey;
     }
 
     /**
@@ -81,16 +57,6 @@ class GlobalId implements EventInterface
     }
 
     /**
-     * @description get db pool name
-     *
-     * @return string
-     */
-    public function getDbPoolName() : string
-    {
-        return $this->dbPoolName;
-    }
-
-    /**
      * @description get redis pool name
      *
      * @return string
@@ -101,32 +67,12 @@ class GlobalId implements EventInterface
     }
 
     /**
-     * @description get table name
+     * @description get global key
      *
      * @return string
      */
-    public function getTableName() : string
+    public function getGlobalKey() : string
     {
-        return $this->tableName;
-    }
-
-    /**
-     * @description get feild name
-     *
-     * @return string
-     */
-    public function getFieldName() : string
-    {
-        return $this->fieldName;
-    }
-
-    /**
-     * @description get primary name
-     *
-     * @return string
-     */
-    public function getPrimaryName() : string
-    {
-        return $this->primaryName;
+        return $this->globalKey;
     }
 }
