@@ -195,7 +195,7 @@ class ContainerTest extends TestCase
     public function testCircularReference()
     {
         $this->expectException(ContainerException::class);
-        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo" circular reference in dependency links: "Kovey\Container\Cir\Foo -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo6 -> Kovey\Container\Cir\Foo7"');
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo" circular reference in dependency link: "Kovey\Container\Cir\Foo -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo6 -> Kovey\Container\Cir\Foo7 -> Kovey\Container\Cir\Foo"');
         $container = new Container();
         $foo = $container->get('Kovey\Container\Cir\Foo', '', '');
     }
@@ -203,7 +203,7 @@ class ContainerTest extends TestCase
     public function testCircularReferenceOne()
     {
         $this->expectException(ContainerException::class);
-        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo4" circular reference in dependency links: "Kovey\Container\Cir\Foo4 -> Kovey\Container\Cir\Foo5"');
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo4" circular reference in dependency link: "Kovey\Container\Cir\Foo4 -> Kovey\Container\Cir\Foo5 -> Kovey\Container\Cir\Foo4"');
         $container = new Container();
         $foo = $container->get('Kovey\Container\Cir\Foo4', '', '');
     }
@@ -211,7 +211,7 @@ class ContainerTest extends TestCase
     public function testCircularReferenceMiddle()
     {
         $this->expectException(ContainerException::class);
-        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo4" circular reference in dependency links: "Kovey\Container\Cir\Foo8 -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo4 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo5 -> Kovey\Container\Cir\Foo6"');
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo1" circular reference in dependency link: "Kovey\Container\Cir\Foo8 -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo6 -> Kovey\Container\Cir\Foo7 -> Kovey\Container\Cir\Foo -> Kovey\Container\Cir\Foo1"');
         $container = new Container();
         $foo = $container->get('Kovey\Container\Cir\Foo8', '', '');
     }

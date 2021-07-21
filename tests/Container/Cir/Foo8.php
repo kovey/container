@@ -17,6 +17,9 @@ class Foo8
     #[Foo1]
     private Foo1 $foo1;
 
+    #[Foo2]
+    private Foo2 $foo2;
+
     #[Foo4]
     private Foo4 $foo4;
 

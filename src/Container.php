@@ -32,6 +32,13 @@ class Container implements ContainerInterface
     private Array $instances;
 
     /**
+     * @description links
+     *
+     * @var Array
+     */
+    private Array $links;
+
+    /**
      * @description methods cache
      *
      * @var Array
@@ -61,6 +68,7 @@ class Container implements ContainerInterface
     {
         $this->instances = array();
         $this->methods = array();
+        $this->links = array();
         $this->keywords = array(
             Event\ShardingDatabase::class => Fields::KEYWORD_DATABASE, 
             Event\ShardingRedis::class => Fields::KEYWORD_REDIS, 
@@ -304,7 +312,7 @@ class Container implements ContainerInterface
      *
      * @return null
      */
-    private function resolve(string | \ReflectionAttribute $class) : void
+    private function resolve(string | \ReflectionAttribute $class, string $pclass = '') : void
     {
         if (!$class instanceof \ReflectionAttribute) {
             if (isset($this->instances[$class])) {
@@ -322,8 +330,15 @@ class Container implements ContainerInterface
             'dependencies' => array()
         );
 
+        if (!empty($pclass)) {
+            $pclass = $pclass . ' -> ' . $class->getName();
+        } else {
+            $pclass = $class->getName();
+        }
+
         $dependencies = $this->getAts($class);
         if (empty($dependencies)) {
+            $this->links[] = $pclass;
             return;
         }
 
@@ -331,10 +346,11 @@ class Container implements ContainerInterface
             $this->instances[$class->getName()]['dependencies'][$dependency['class']->getName()] = $dependency['property'];
 
             if (isset($this->instances[$dependency['class']->getName()])) {
+                $this->links[] = $pclass . ' -> ' . $dependency['class']->getName();
                 continue;
             }
 
-            $this->resolve($dependency['class']);
+            $this->resolve($dependency['class'], $pclass);
         }
     }
 
@@ -349,24 +365,15 @@ class Container implements ContainerInterface
      */
     private function checkCircularReference(string $class) : void
     {
-        $queue = new \SplQueue();
-        $queue->enqueue($class);
-        $set = array();
-        while (!$queue->isEmpty()) {
-            $pid = $queue->dequeue();
-            $info = $this->instances[$pid];
-            if (empty($info['dependencies'])) {
-                continue;
-            }
+        foreach ($this->links as $link) {
+            $info = explode(' -> ', $link);
+            $info = array_count_values($info);
+            foreach ($info as $key => $val) {
+                if ($val < 2) {
+                    continue;
+                }
 
-            if (isset($set[$pid])) {
-                throw new ContainerException(sprintf('"%s" circular reference in dependency links: "%s"', $pid, implode(' -> ', array_keys($set))));
-            }
-
-            $set[$pid] = 1;
-
-            foreach ($info['dependencies'] as $ds => $dInfo) {
-                $queue->enqueue($ds);
+                throw new ContainerException(sprintf('"%s" circular reference in dependency link: "%s"', $key, $link));
             }
         }
     }
