@@ -20,9 +20,20 @@ require_once __DIR__ . '/Cases/Foo6.php';
 require_once __DIR__ . '/Cases/Foo7.php';
 require_once __DIR__ . '/Cases/FooController.php';
 
+require_once __DIR__ . '/Cir/Foo.php';
+require_once __DIR__ . '/Cir/Foo1.php';
+require_once __DIR__ . '/Cir/Foo2.php';
+require_once __DIR__ . '/Cir/Foo4.php';
+require_once __DIR__ . '/Cir/Foo5.php';
+require_once __DIR__ . '/Cir/Foo6.php';
+require_once __DIR__ . '/Cir/Foo7.php';
+require_once __DIR__ . '/Cir/Foo8.php';
+
 use PHPUnit\Framework\TestCase;
 use Kovey\Container\Cases;
+use Kovey\Container\Cir;
 use Kovey\Container\Event;
+use Kovey\Container\Exception\ContainerException;
 
 class ContainerTest extends TestCase
 {
@@ -68,11 +79,8 @@ class ContainerTest extends TestCase
         $this->assertTrue($keywords['openTransaction']);
         $this->assertEquals('db', $keywords['database']);
         $this->assertEquals('redis', $keywords['ext']['redis']);
-        $this->assertEquals('mysql', $keywords['ext']['globalId']->getDbPoolName());
-        $this->assertEquals('redis', $keywords['ext']['globalId']->getRedisPoolName());
-        $this->assertEquals('global_id', $keywords['ext']['globalId']->getTableName());
-        $this->assertEquals('test_id', $keywords['ext']['globalId']->getFieldName());
-        $this->assertEquals('id', $keywords['ext']['globalId']->getPrimaryName());
+        $this->assertEquals('redis', $keywords['ext']['globalId']->getGlobalKey());
+        $this->assertEquals('mysql', $keywords['ext']['globalId']->getRedisPoolName());
         $keywords = $container->getKeywords('Kovey\Container\Cases\Foo', 'testSharding');
         $this->assertEquals('mysql', $keywords['ext']['database']);
         $this->assertEquals('redis', $keywords['ext']['redis']);
@@ -182,5 +190,29 @@ class ContainerTest extends TestCase
         $this->assertTrue(!isset($keywords['ext']['redis']));
         $this->assertTrue($keywords['openTransaction']);
         $this->assertEquals('db', $keywords['database']);
+    }
+
+    public function testCircularReference()
+    {
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo" circular reference in dependency links: "Kovey\Container\Cir\Foo -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo6 -> Kovey\Container\Cir\Foo7"');
+        $container = new Container();
+        $foo = $container->get('Kovey\Container\Cir\Foo', '', '');
+    }
+
+    public function testCircularReferenceOne()
+    {
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo4" circular reference in dependency links: "Kovey\Container\Cir\Foo4 -> Kovey\Container\Cir\Foo5"');
+        $container = new Container();
+        $foo = $container->get('Kovey\Container\Cir\Foo4', '', '');
+    }
+
+    public function testCircularReferenceMiddle()
+    {
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo4" circular reference in dependency links: "Kovey\Container\Cir\Foo8 -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo4 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo5 -> Kovey\Container\Cir\Foo6"');
+        $container = new Container();
+        $foo = $container->get('Kovey\Container\Cir\Foo8', '', '');
     }
 }

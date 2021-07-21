@@ -101,6 +101,7 @@ class Container implements ContainerInterface
     {
         if (!isset($this->instances[$class])) {
             $this->resolve($class);
+            $this->checkCircularReference($class);
         }
 
         $class = $this->instances[$class]['class'];
@@ -183,9 +184,9 @@ class Container implements ContainerInterface
             return $obj;
         }
 
-        foreach ($dependencies as $dependency) {
-            $dep = $this->bind($this->instances[$dependency['class']]['class'], $traceId, $spanId, $this->instances[$dependency['class']]['dependencies'] ?? array(), $ext);
-            $dependency['property']->setValue($obj, $dep);
+        foreach ($dependencies as $className => $property) {
+            $dep = $this->bind($this->instances[$className]['class'], $traceId, $spanId, $this->instances[$className]['dependencies'] ?? array(), $ext);
+            $property->setValue($obj, $dep);
         }
 
         return $obj;
@@ -327,16 +328,46 @@ class Container implements ContainerInterface
         }
 
         foreach ($dependencies as $dependency) {
-            $this->instances[$class->getName()]['dependencies'][] = array(
-                'class' => $dependency['class']->getName(),
-                'property' => $dependency['property']
-            );
+            $this->instances[$class->getName()]['dependencies'][$dependency['class']->getName()] = $dependency['property'];
 
             if (isset($this->instances[$dependency['class']->getName()])) {
                 continue;
             }
 
             $this->resolve($dependency['class']);
+        }
+    }
+
+    /**
+     * @description check circular reference
+     *
+     * @param string $class
+     *
+     * @return void
+     *
+     * @throws ContainerException
+     */
+    private function checkCircularReference(string $class) : void
+    {
+        $queue = new \SplQueue();
+        $queue->enqueue($class);
+        $set = array();
+        while (!$queue->isEmpty()) {
+            $pid = $queue->dequeue();
+            $info = $this->instances[$pid];
+            if (empty($info['dependencies'])) {
+                continue;
+            }
+
+            if (isset($set[$pid])) {
+                throw new ContainerException(sprintf('"%s" circular reference in dependency links: "%s"', $pid, implode(' -> ', array_keys($set))));
+            }
+
+            $set[$pid] = 1;
+
+            foreach ($info['dependencies'] as $ds => $dInfo) {
+                $queue->enqueue($ds);
+            }
         }
     }
 
@@ -488,6 +519,7 @@ class Container implements ContainerInterface
 
             $class = trim($namespace . '\\' . substr($file, 0, -4) . $suffix, '\\');
             $this->resolve($class);
+            $this->checkCircularReference($class);
             $ref = new \ReflectionClass($class);
             foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
                 $this->methods[$ref->getName() . '::' . $method->getName()] = $this->resolveMethod($method);
