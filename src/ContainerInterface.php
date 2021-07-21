@@ -78,4 +78,11 @@ interface ContainerInterface
      * @return $this
      */
     public function parse(string $dir, string $namespace, string $suffix = '') : ContainerInterface;
+
+    /**
+     * @description open check multi instance
+     *
+     * @return ContainerInterface
+     */
+    public function openCheckMultiInstance() : ContainerInterface;
 }

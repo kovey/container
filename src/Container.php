@@ -60,6 +60,13 @@ class Container implements ContainerInterface
     private EventManager $eventManager;
 
     /**
+     * @description check multi instance off
+     *
+     * @var bool
+     */
+    private bool $isCheckMultiInstance = false;
+
+    /**
      * @description construct
      *
      * @return Container
@@ -109,7 +116,10 @@ class Container implements ContainerInterface
     {
         if (!isset($this->instances[$class])) {
             $this->resolve($class);
-            $this->checkCircularReference($class);
+            $this->checkCircularReference();
+            if ($this->isCheckMultiInstance) {
+                $this->checkMultiInstance($class);
+            }
         }
 
         $class = $this->instances[$class]['class'];
@@ -357,13 +367,11 @@ class Container implements ContainerInterface
     /**
      * @description check circular reference
      *
-     * @param string $class
-     *
      * @return void
      *
      * @throws ContainerException
      */
-    private function checkCircularReference(string $class) : void
+    private function checkCircularReference() : void
     {
         foreach ($this->links as $link) {
             $info = explode(' -> ', $link);
@@ -376,6 +384,38 @@ class Container implements ContainerInterface
                 throw new ContainerException(sprintf('"%s" circular reference in dependency link: "%s"', $key, $link));
             }
         }
+    }
+
+    /**
+     * @description check instance more than one
+     *
+     * @param string $class
+     *
+     * @return void
+     *
+     * @throws ContainerException
+     */
+    private function checkMultiInstance($class) : void
+    {
+        $queue = new \SplQueue();
+        $queue->enqueue($class);
+        $set = array();
+        while (!$queue->isEmpty()) {
+            $pid = $queue->dequeue();
+            $info = $this->instances[$pid];
+
+            if (isset($set[$pid])) {
+                throw new ContainerException(sprintf('"%s" more than one instance in dependency links: "%s"', $pid, implode(' -> ', array_keys($set))));
+            }
+
+            $set[$pid] = 1;
+
+            foreach ($info['dependencies'] as $ds => $dInfo) {
+                $queue->enqueue($ds);
+            }
+        }
+
+        var_dump($set);
     }
 
     /**
@@ -526,13 +566,27 @@ class Container implements ContainerInterface
 
             $class = trim($namespace . '\\' . substr($file, 0, -4) . $suffix, '\\');
             $this->resolve($class);
-            $this->checkCircularReference($class);
+            if ($this->isCheckMultiInstance) {
+                $this->checkMultiInstance($class);
+            }
             $ref = new \ReflectionClass($class);
             foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
                 $this->methods[$ref->getName() . '::' . $method->getName()] = $this->resolveMethod($method);
             }
         }
 
+        $this->checkCircularReference();
+        return $this;
+    }
+
+    /**
+     * @description open check multi instance
+     *
+     * @return ContainerInterface
+     */
+    public function openCheckMultiInstance() : ContainerInterface
+    {
+        $this->isCheckMultiInstance = true;
         return $this;
     }
 }

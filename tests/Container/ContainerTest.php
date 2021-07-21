@@ -28,6 +28,9 @@ require_once __DIR__ . '/Cir/Foo5.php';
 require_once __DIR__ . '/Cir/Foo6.php';
 require_once __DIR__ . '/Cir/Foo7.php';
 require_once __DIR__ . '/Cir/Foo8.php';
+require_once __DIR__ . '/Cir/Foo9.php';
+require_once __DIR__ . '/Cir/Foo10.php';
+require_once __DIR__ . '/Cir/Foo11.php';
 
 use PHPUnit\Framework\TestCase;
 use Kovey\Container\Cases;
@@ -214,5 +217,14 @@ class ContainerTest extends TestCase
         $this->expectExceptionMessage('"Kovey\Container\Cir\Foo1" circular reference in dependency link: "Kovey\Container\Cir\Foo8 -> Kovey\Container\Cir\Foo1 -> Kovey\Container\Cir\Foo2 -> Kovey\Container\Cir\Foo6 -> Kovey\Container\Cir\Foo7 -> Kovey\Container\Cir\Foo -> Kovey\Container\Cir\Foo1"');
         $container = new Container();
         $foo = $container->get('Kovey\Container\Cir\Foo8', '', '');
+    }
+
+    public function testCheckMultiInstance()
+    {
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage('"Kovey\Container\Cir\Foo11" more than one instance in dependency links: "Kovey\Container\Cir\Foo9 -> Kovey\Container\Cir\Foo10 -> Kovey\Container\Cir\Foo11"');
+        $container = new Container();
+        $container->openCheckMultiInstance();
+        $foo = $container->get('Kovey\Container\Cir\Foo9', '', '');
     }
 }
