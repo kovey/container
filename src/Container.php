@@ -122,6 +122,10 @@ class Container implements ContainerInterface
             }
         }
 
+        if (empty($this->instances[$class]['class'])) {
+            throw new \RuntimeException(sprintf('Class "%s" in not exists', $class));
+        }
+
         $class = $this->instances[$class]['class'];
 
         if (count($args) < 1) {
