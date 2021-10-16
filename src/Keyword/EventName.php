@@ -26,4 +26,6 @@ class EventName
     const EVENT_ROUTER = 'Router';
 
     const EVENT_PROTOCOL = 'Protocol';
+
+    const EVENT_CLICKHOUSE = 'Clickhouse';
 }

@@ -84,7 +84,8 @@ class Container implements ContainerInterface
             Event\Redis::class => Fields::KEYWORD_REDIS, 
             Event\GlobalId::class => Fields::KEYWORD_GLOBAL_ID,
             Event\Router::class => Fields::KEYWORD_BOOL_TRUE,
-            Event\Protocol::class => Fields::KEYWORD_BOOL_TRUE
+            Event\Protocol::class => Fields::KEYWORD_BOOL_TRUE,
+            Event\Clickhouse::class => Fields::KEYWORD_DATABASE
         );
         $this->eventManager = new EventManager(array(
             EventName::EVENT_SHARDING_DATABASE => Event\ShardingDatabase::class,
@@ -93,7 +94,8 @@ class Container implements ContainerInterface
             EventName::EVENT_REDIS => Event\Redis::class,
             EventName::EVENT_GLOBAL_ID => Event\GlobalId::class,
             EventName::EVENT_ROUTER => Event\Router::class,
-            EventName::EVENT_PROTOCOL => Event\Protocol::class
+            EventName::EVENT_PROTOCOL => Event\Protocol::class,
+            EventName::EVENT_CLICKHOUSE => Event\Clickhouse::class
         ));
     }
 

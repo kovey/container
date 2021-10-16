@@ -150,6 +150,7 @@ class ContainerTest extends TestCase
         $code = 0;
         $protobuf = '';
         $base = '';
+        $clusterOpen = '';
         $container->on('Router', function (Event\Router $event) use (&$path, &$method, &$router) {
             $path = $event->getPath();
             $method = $event->getMethod();
@@ -159,6 +160,10 @@ class ContainerTest extends TestCase
               $code = $event->getCode();
               $protobuf = $event->getProtobuf();
               $base = $event->getProtobufBase();
+          })
+          ->on('Clickhouse', function (Event\Clickhouse $event) use (&$clusterOpen) {
+              $clusterOpen = $event->getClusterOpen();
+              return $clusterOpen;
           });
 
         $container->parse(__DIR__ . '/Cases', 'Kovey\\Container\\Cases', '');
@@ -193,6 +198,8 @@ class ContainerTest extends TestCase
         $this->assertTrue(!isset($keywords['ext']['redis']));
         $this->assertTrue($keywords['openTransaction']);
         $this->assertEquals('db', $keywords['database']);
+        $click = $container->getKeywords('Kovey\Container\Cases\FooController', 'handler');
+        $this->assertEquals('On', $clusterOpen);
     }
 
     public function testCircularReference()

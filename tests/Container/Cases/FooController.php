@@ -13,6 +13,7 @@ namespace Kovey\Container\Cases;
 
 use Kovey\Container\Event\Router;
 use Kovey\Container\Event\Protocol;
+use Kovey\Container\Event\Clickhouse;
 
 class FooController
 {
@@ -23,6 +24,7 @@ class FooController
     }
 
     #[Protocol(1001, Protocol::class, Router::class)]
+    #[Clickhouse('On')]
     public function handler()
     {
         return 'handler';
