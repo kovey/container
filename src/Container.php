@@ -19,6 +19,7 @@ use Kovey\Validator\RuleInterface;
 use Kovey\Container\Keyword\Fields;
 use Kovey\Container\Keyword\EventName;
 use Kovey\Container\Module;
+use Kovey\Library\Trace\TraceInterface;
 
 class Container implements ContainerInterface
 {
@@ -144,10 +145,14 @@ class Container implements ContainerInterface
             }
 
             if (!empty($traceId)) {
-                $val->traceId = $traceId;
+                if ($val instanceof TraceInterface) {
+                    $val->setTraceId($traceId);
+                }
             }
             if (!empty($spanId)) {
-                $val->spanId = $spanId;
+                if ($val instanceof TraceInterface) {
+                    $val->setSpanId($spanId);
+                }
             }
         });
 
@@ -179,11 +184,15 @@ class Container implements ContainerInterface
         }
 
         if (!empty($traceId)) {
-            $obj->traceId = $traceId;
+            if ($obj instanceof TraceInterface) {
+                $obj->setTraceId($traceId);
+            }
         }
 
         if (!empty($spanId)) {
-            $obj->spanId = $spanId;
+            if ($obj instanceof TraceInterface) {
+                $obj->setSpanId($spanId);
+            }
         }
 
         if ($obj instanceof Module\HasDbInterface) {
@@ -352,7 +361,12 @@ class Container implements ContainerInterface
             $pclass = $class->getName();
         }
 
-        $dependencies = $this->getAts($class);
+        try {
+            $dependencies = $this->getAts($class);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(sprintf('%s in class[%s]', $e->getMessag(), $class->getName()), 1002);
+        }
+
         if (empty($dependencies)) {
             $this->links[] = $pclass;
             return;
