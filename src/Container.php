@@ -364,7 +364,7 @@ class Container implements ContainerInterface
         try {
             $dependencies = $this->getAts($class);
         } catch (\Throwable $e) {
-            throw new \RuntimeException(sprintf('%s in class[%s]', $e->getMessag(), $class->getName()), 1002);
+            throw new \RuntimeException(sprintf('%s in class[%s]', $e->getMessage(), $class->getName()), 1002);
         }
 
         if (empty($dependencies)) {
