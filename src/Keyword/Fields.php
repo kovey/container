@@ -22,4 +22,6 @@ class Fields
     const KEYWORD_BOOL_TRUE = true;
 
     const KEYWORD_OPEN_TRANSACTION = 'openTransaction';
+
+    const KEYWORD_LOCKER = 'locker';
 }

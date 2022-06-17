@@ -86,7 +86,8 @@ class Container implements ContainerInterface
             Event\GlobalId::class => Fields::KEYWORD_GLOBAL_ID,
             Event\Router::class => Fields::KEYWORD_BOOL_TRUE,
             Event\Protocol::class => Fields::KEYWORD_BOOL_TRUE,
-            Event\Clickhouse::class => Fields::KEYWORD_DATABASE
+            Event\Clickhouse::class => Fields::KEYWORD_DATABASE,
+            Event\Locker::class => Fields::KEYWORD_LOCKER
         );
         $this->eventManager = new EventManager(array(
             EventName::EVENT_SHARDING_DATABASE => Event\ShardingDatabase::class,
@@ -530,6 +531,9 @@ class Container implements ContainerInterface
             }
 
             if (!$this->eventManager->listenedByClass($keyword)) {
+                if (isset($this->keywords[$keyword])) {
+                    $keywords[$this->keywords[$keyword]] = $event->newInstance();
+                }
                 continue;
             }
 
