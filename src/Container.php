@@ -435,8 +435,6 @@ class Container implements ContainerInterface
                 $queue->enqueue($ds);
             }
         }
-
-        var_dump($set);
     }
 
     /**
